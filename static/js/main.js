@@ -67,16 +67,41 @@ $(document).ready(() => {
     for (let i = 0; i < 12; i++)
         addLightBeam(i * 30);
 
-    getEvents(new Date().getFullYear() - 1, events => {
-        getScores(events[Math.floor(Math.random() * events.length)], eventScores => {
-            for (let i = 0; i < eventScores.length && i < 15; i++) {
-                scoreCache.push({score: eventScores[i].red, red: true});
-                scoreCache.push({score: eventScores[i].blue, red: false});
-            }
-            scoreWait = 3300 / scoreCache.length;
-            console.log(scoreWait);
-            markReady();
-        });
-    });
+    const initScores = event => {
+        try {
+            getScores(event, eventScores => {
+                for (let i = 0; i < eventScores.length && i < 15; i++) {
+                    scoreCache.push({score: eventScores[i].red, red: true});
+                    scoreCache.push({score: eventScores[i].blue, red: false});
+                }
+                scoreWait = 3300 / scoreCache.length;
+                console.log(scoreWait);
+                markReady();
+            });
+            $("#bg-site").attr("src", "https://www.thebluealliance.com/event/" + event);
+        } catch (e) {
+            document.write("No such event \"" + event + "\"");
+            console.log(e);
+        }
+    };
+
+    const defaultEvents = () => {
+        getEvents(new Date().getFullYear() - 1, events =>
+            initScores(events[Math.floor(Math.random() * events.length)]));
+    };
+
+    let q = {};
+    if (!!document.location.search) {
+        let parts = document.location.search.substring(1).split("&");
+        for (let i = 0; i < parts.length; i++) {
+            let entry = parts[i].split("=");
+            q[entry[0]] = entry[1];
+        }
+    }
+
+    if (!q.e)
+        defaultEvents();
+    else
+        initScores(q.e);
     
 });
