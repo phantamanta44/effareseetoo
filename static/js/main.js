@@ -45,13 +45,14 @@ $(document).ready(() => {
         intro.play();
     };
 
+    const neededReadies = 3;
     let readies = 0;
     const markReady = () => {
-        if (++readies >= 3) {
+        if (++readies >= neededReadies) {
             ls.addClass("robot-is-ready");
             window.setTimeout(timeForAMiracle, 1200);
         }
-        console.log(readies + " of 2 ready for a miracle!")
+        console.log(readies + " of " + neededReadies + " ready for a miracle!")
     };
 
     miracle.once("load", markReady);
@@ -67,28 +68,41 @@ $(document).ready(() => {
     for (let i = 0; i < 12; i++)
         addLightBeam(i * 30);
 
+    let usingDefault = false;
+
     const initScores = event => {
         try {
             getScores(event, eventScores => {
-                for (let i = 0; i < eventScores.length && i < 15; i++) {
-                    scoreCache.push({score: eventScores[i].red, red: true});
-                    scoreCache.push({score: eventScores[i].blue, red: false});
+                if (usingDefault && eventScores < 10) {
+                    console.log("Not enough matches in event " + event + "!");
+                    useDefaultEvents();
+                } else {
+                    for (let i = 0; i < eventScores.length && i < 15; i++) {
+                        scoreCache.push({score: eventScores[i].red, red: true});
+                        scoreCache.push({score: eventScores[i].blue, red: false});
+                    }
+                    scoreWait = 3300 / scoreCache.length;
+                    markReady();
+                    $("#bg-site").attr("src", "https://www.thebluealliance.com/event/" + event);
                 }
-                scoreWait = 3300 / scoreCache.length;
-                console.log(scoreWait);
-                markReady();
             });
-            $("#bg-site").attr("src", "https://www.thebluealliance.com/event/" + event);
         } catch (e) {
             document.write("No such event \"" + event + "\"");
             console.log(e);
         }
     };
 
-    const defaultEvents = () => {
-        getEvents(new Date().getFullYear() - 1, events =>
-            initScores(events[Math.floor(Math.random() * events.length)]));
+    let defaultEventCache;
+    const loadDefaultEvents = cb => {
+        usingDefault = true;
+        getEvents(new Date().getFullYear() - 1, events => {
+            defaultEventCache = events;
+            cb();
+        });
     };
+
+    const useDefaultEvents = () =>
+        initScores(defaultEventCache[Math.floor(Math.random() * defaultEventCache.length)]);
 
     let q = {};
     if (!!document.location.search) {
@@ -100,7 +114,7 @@ $(document).ready(() => {
     }
 
     if (!q.e)
-        defaultEvents();
+        loadDefaultEvents(useDefaultEvents);
     else
         initScores(q.e);
     
